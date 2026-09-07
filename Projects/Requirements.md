@@ -5,11 +5,30 @@
 
 ## 1. YÊU CẦU CHỨC NĂNG (FUNCTIONAL REQUIREMENTS - FR)
 
-* **FR-01 (Đăng ký/Đăng nhập):** Hệ thống cho phép người dùng đăng ký tài khoản mới và đăng nhập bằng Email/Password hoặc Google OAuth.
-* **FR-02 (Tạo & Quản lý Task):** Hệ thống cho phép người dùng tạo công việc mới bao gồm các thông tin: Tên task, Mô tả, Hạn hoàn thành (Deadline), Mức độ ưu tiên (`LOW`, `MEDIUM`, `HIGH`), Người thực hiện (Assignee) và Nhãn (Tag).
-* **FR-03 (Bảng Kanban):** Hệ thống cho phép người dùng cập nhật trạng thái công việc (`TO_DO`, `IN_PROGRESS`, `DONE`) bằng thao tác kéo thả các thẻ task trên bảng Kanban.
-* **FR-04 (Phân công nhiệm vụ):** Hệ thống cho phép Trưởng nhóm gán/đổi người thực hiện công việc. Chỉ những người thuộc danh sách thành viên dự án mới được phép gán.
-* **FR-05 (Tìm kiếm & Lọc):** Hệ thống cho phép người dùng tìm kiếm task theo từ khóa và lọc task theo trạng thái, mức độ ưu tiên hoặc người thực hiện.
+* **FR-01 (Đăng ký & Đăng nhập):**
+  * **Input:** Email, Mật khẩu (tối thiểu 8 ký tự) hoặc Đăng nhập qua Google OAuth 2.0.
+  * **Processing:** Hệ thống xác thực thông tin tài khoản. Nếu đăng nhập bằng Google lần đầu, tự động khởi tạo hồ sơ người dùng mới. Sinh mã xác thực JWT (Access Token có hiệu lực 1 giờ, Refresh Token có hiệu lực 7 ngày).
+  * **Output:** Trả về kết quả đăng nhập thành công, điều hướng người dùng vào giao diện Bảng điều khiển (Dashboard).
+
+* **FR-02 (Tạo mới Công việc - Task Creation):**
+  * **Input:** Tên task (bắt buộc, 1-200 ký tự), Mô tả, Deadline (ngày/giờ), Mức độ ưu tiên (`LOW`, `MEDIUM`, `HIGH`), Người thực hiện (`Assignee_ID`), Nhãn (`Tags`).
+  * **Processing:** Kiểm tra dữ liệu đầu vào. Xác minh `Assignee_ID` có thuộc danh sách thành viên active trong dự án hay không. Nếu hợp lệ, lưu bản ghi mới vào CSDL với trạng thái mặc định là `TO_DO`.
+  * **Output:** Trả về mã HTTP `201 Created`, hiển thị ngay thẻ task mới lên cột `To-Do` trên Bảng Kanban.
+
+* **FR-03 (Quản lý Bảng Kanban & Cập nhật Trạng thái):**
+  * **Input:** Thao tác kéo-thả (Drag & Drop) thẻ task từ cột này sang cột khác (`TO_DO` $\rightarrow$ `IN_PROGRESS` $\rightarrow$ `DONE`).
+  * **Processing:** Cập nhật trường `status` của task tương ứng trong CSDL. Nếu task được chuyển sang trạng thái `DONE`, tự động ghi nhận thời gian hoàn thành (`completed_at = NOW()`).
+  * **Output:** Giao diện Kanban cập nhật vị trí thẻ task tức thì mà không cần tải lại toàn bộ trang (Full Page Reload).
+
+* **FR-04 (Phân công & Đổi người thực hiện):**
+  * **Input:** Chọn một hoặc nhiều thành viên từ danh sách Dropdown để gán vào Task.
+  * **Processing:** Kiểm tra quyền hạn của người thực hiện thao tác (phải là Admin/PM/Project Owner). Cập nhật lại danh sách `Assignee_ID`.
+  * **Output:** Hệ thống gửi thông báo In-app (Notification) đến người vừa được gán công việc.
+
+* **FR-05 (Tìm kiếm & Lọc công việc):**
+  * **Input:** Từ khóa tìm kiếm (Tên task/Mô tả) hoặc các tiêu chí lọc (Trạng thái, Priority, Assignee).
+  * **Processing:** Hệ thống truy vấn CSDL theo bộ lọc tương ứng.
+  * **Output:** Trả về danh sách các task thỏa mãn điều kiện lọc trong thời gian thực.
 
 ---
 
@@ -17,10 +36,10 @@
 
 ### 2.1. Danh sách các yêu cầu phi chức năng
 
-1. **NFR-PERF-01:** Thời gian đáp ứng của chức năng tải bảng Kanban.
-2. **NFR-SEC-01:** Bảo mật thông tin mật khẩu và mã hóa dữ liệu người dùng.
-3. **NFR-SEC-02:** Ràng buộc giới hạn tần suất gọi API (Rate Limiting) phòng chống tấn công.
-4. **NFR-REL-01:** Độ sẵn sàng và khả năng hoạt động liên tục của hệ thống.
+1. **NFR-PERF-01:** Thời gian phản hồi API tải bảng Kanban phải $\le 2$ giây.
+2. **NFR-SEC-01:** Mật khẩu mã hóa bằng `bcrypt` (Cost factor $\ge 12$), khóa tài khoản sau 5 lần nhập sai.
+3. **NFR-SEC-02:** Giới hạn tần suất gọi API tối đa 100 requests / 1 phút / IP.
+4. **NFR-REL-01:** Độ sẵn sàng hoạt động của hệ thống (Uptime) đạt tối thiểu $99.5\%$/tháng.
 
 ---
 
@@ -30,11 +49,11 @@
 | :--- | :--- |
 | **Mã** | NFR-PERF-01 |
 | **Loại** | Performance Efficiency |
-| **Mô tả** | Thời gian đáp ứng khi tải và thao tác kéo thả trên bảng Kanban |
-| **Nguồn** | Biên bản họp thống nhất hiệu năng hệ thống |
-| **Thang đo** | Thời gian từ lúc người dùng thao tác đến khi giao diện Kanban cập nhật xong (giây) |
-| **Tiêu chí** | $P_{95} \le 2\text{s}$ (ít nhất 95% request được xử lý trong vòng 2 giây) khi có 500 người dùng đồng thời, CSDL có 100.000 tasks |
-| **Cách đo** | Kịch bản JMeter chạy 15 phút trên môi trường Staging |
+| **Mô tả** | Thời gian đáp ứng của API tải dữ liệu và thao tác kéo thả trên bảng Kanban phải $\le 2$ giây |
+| **Nguồn** | Biên bản họp thống nhất hiệu năng hệ thống ngày 15/03 |
+| **Thang đo** | Thời gian phản hồi (Response Time) từ lúc gửi request đến khi nhận data kết thúc (tính bằng giây) |
+| **Tiêu chí** | Mốc $P_{95} \le 2\text{s}$ (95% số request hoàn tất dưới 2 giây) khi có 500 người dùng đồng thời, CSDL đạt 100.000 tasks |
+| **Cách đo** | Kịch bản JMeter/K6 chạy kiểm thử tải trong 15 phút trên môi trường Staging |
 | **Độ ưu tiên** | Must have |
 | **Liên quan** | FR-03 (Bảng Kanban) |
 
@@ -44,13 +63,13 @@
 | :--- | :--- |
 | **Mã** | NFR-SEC-01 |
 | **Loại** | Security |
-| **Mô tả** | Cơ chế lưu trữ mật khẩu an toàn và mã hóa luồng dữ liệu |
+| **Mô tả** | Mật khẩu phải mã hóa `bcrypt` (Salt factor $\ge 12$), kết nối mã hóa TLS 1.3, khóa tài khoản 15 phút nếu đăng nhập sai 5 lần liên tiếp |
 | **Nguồn** | Tiêu chuẩn an toàn thông tin OWASP Top 10 |
-| **Thang đo** | Thuật toán mã hóa mật khẩu và giao thức kết nối mạng |
-| **Tiêu chí** | Mật khẩu mã hóa bằng `bcrypt` (Cost factor $\ge 12$). Toàn bộ kết nối API bắt buộc dùng HTTPS (TLS 1.3). Tự động khóa tài khoản 15 phút nếu nhập sai 5 lần. |
-| **Cách đo** | Kiểm tra mã nguồn (Static Code Analysis) và quét lỗ hổng bằng OWASP ZAP |
+| **Thang đo** | Thuật toán mã hóa mật khẩu, độ dài khóa TLS, số lần đăng nhập sai tối đa và thời gian khóa |
+| **Tiêu chí** | $100\%$ mật khẩu lưu DB được hash bằng `bcrypt` (cost $\ge 12$). $100\%$ kết nối API qua HTTPS (TLS 1.3). Tự động khóa tài khoản đúng 15 phút ngay sau lần đăng nhập sai thứ 5. |
+| **Cách đo** | Rà soát mã nguồn (Static Code Analysis) và chạy công cụ thử nghiệm tấn công OWASP ZAP |
 | **Độ ưu tiên** | Must have |
-| **Liên quan** | FR-01 (Đăng ký/Đăng nhập) |
+| **Liên quan** | FR-01 (Đăng ký & Đăng nhập) |
 
 ---
 
@@ -58,11 +77,11 @@
 | :--- | :--- |
 | **Mã** | NFR-SEC-02 |
 | **Loại** | Security & Resiliency |
-| **Mô tả** | Giới hạn tần suất gửi yêu cầu để chống tấn công từ chối dịch vụ (DDoS) |
-| **Nguồn** | Tài liệu thiết kế kiến trúc Backend |
-| **Thang đo** | Số lượng request tối đa được chấp nhận trong một khoảng thời gian |
-| **Tiêu chí** | Tối đa 100 requests / 1 phút cho mỗi địa chỉ IP. Vượt quá ngưỡng trả về lỗi HTTP 429 (Too Many Requests). |
-| **Cách đo** | Chạy script tự động gửi 150 requests/phút từ một IP và kiểm tra phản hồi HTTP |
+| **Mô tả** | Tần suất gửi request tối đa không vượt quá 100 requests / 1 phút / địa chỉ IP |
+| **Nguồn** | Tài liệu thiết kế kiến trúc Backend chống tấn công DDoS |
+| **Thang đo** | Số lượng HTTP Request ghi nhận được từ 1 địa chỉ IP trong cửa sổ thời gian 60 giây |
+| **Tiêu chí** | Giới hạn chính xác $\le 100\text{ req/min/IP}$. Request thứ 101 trong cùng phút phải bị chặn và trả về lỗi HTTP 429 (Too Many Requests) trong vòng $< 50\text{ms}$. |
+| **Cách đo** | Chạy script tự động gửi 150 requests/phút từ 1 IP kiểm tra HTTP Status Code phản hồi |
 | **Độ ưu tiên** | Should have |
 | **Liên quan** | Toàn bộ các yêu cầu FR |
 
@@ -72,11 +91,11 @@
 | :--- | :--- |
 | **Mã** | NFR-REL-01 |
 | **Loại** | Reliability & Availability |
-| **Mô tả** | Mức độ sẵn sàng phục vụ của hệ thống quản lý công việc |
+| **Mô tả** | Độ sẵn sàng hệ thống đạt tối thiểu $99.5\%$/tháng (thời gian gián đoạn không quá 3.6 giờ/tháng) |
 | **Nguồn** | Cam kết chất lượng dịch vụ (SLA) với khách hàng |
-| **Thang đo** | Tỷ lệ phần trăm thời gian hệ thống hoạt động bình thường trong tháng |
-| **Tiêu chí** | Uptime $\ge 99.5\%$/tháng (thời gian gián đoạn tối đa không quá 3.6 giờ/tháng, không tính lịch bảo trì định kỳ) |
-| **Cách đo** | Theo dõi bằng công cụ UptimeRobot / Datadog trong 30 ngày |
+| **Thang đo** | Tỷ lệ phần trăm thời gian hệ thống phản hồi HTTP 2xx/3xx thành công trong tháng |
+| **Tiêu chí** | Tỷ lệ Uptime $\ge 99.5\%$/tháng (Tổng thời gian ngắt quãng hệ thống ngoài dự kiến $\le 3\text{ giờ } 36\text{ phút}$ / 30 ngày) |
+| **Cách đo** | Giám sát tự động 24/7 bằng công cụ UptimeRobot / Datadog với tần suất ping 1 phút/lần |
 | **Độ ưu tiên** | Must have |
 | **Liên quan** | Toàn bộ hệ thống |
 
@@ -86,9 +105,9 @@
 
 ### 3.1. Danh sách các yêu cầu chức năng không tương tác
 
-1. **NIFR-01:** Tự động gửi email nhắc hạn công việc (Task Deadline Reminder).
-2. **NIFR-02:** Tự động cập nhật trạng thái Task cha khi các Sub-tasks hoàn thành.
-3. **NIFR-03:** Tự động ghi nhật ký hệ thống (Audit Log) cho các thao tác dữ liệu.
+1. **NIFR-01:** Tự động gửi email nhắc hạn công việc (Task Deadline Reminder) lúc 00:00 hằng ngày.
+2. **NIFR-02:** Tự động cập nhật trạng thái Task cha sang `DONE` khi $100\%$ Sub-tasks hoàn thành.
+3. **NIFR-03:** Tự động ghi nhật ký hệ thống (Audit Log) cho các thao tác Thêm/Sửa/Xóa dữ liệu.
 
 ---
 
@@ -99,7 +118,7 @@
 | **Mã** | NIFR-01 |
 | **Tên** | Gửi email nhắc hạn công việc (Task Deadline Reminder) |
 | **Loại** | Chức năng theo lịch (Temporal) |
-| **Điều kiện kích hoạt** | `00:00` hằng ngày (Múi giờ UTC+7) |
+| **Điều kiện kích hoạt** | Đúng `00:00` hằng ngày (Múi giờ UTC+7) |
 | **Điều kiện tiền đề** | Tồn tại công việc có trạng thái khác `DONE` và chưa hoàn thành. |
 | **Hành vi** | 1. Quét toàn bộ bảng dữ liệu công việc (`Tasks`).<br>2. Chọn các công việc có hạn hoàn thành (`due_date`) trong vòng 24 giờ tới hoặc đã quá hạn.<br>3. Sinh email nhắc nhở theo mẫu HTML tương ứng.<br>4. Gửi qua dịch vụ SMTP và ghi nhật ký kết quả. |
 | **Kết quả** | Mỗi thành viên nhận tối đa 1 email/ngày; Nhật ký được lưu vết đầy đủ. |
