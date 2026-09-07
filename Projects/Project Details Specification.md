@@ -67,8 +67,10 @@
 
 ## 5. CÁC BÊN LIÊN QUAN (PROJECT STAKEHOLDERS)
 
-| Vai trò | Người đảm nhiệm | Trách nhiệm & Mức độ ảnh hưởng |
-| :--- | :--- | :--- |
-| **Developer / Product Owner** | **Bản thân bạn (Sinh viên)** | - Chịu trách nhiệm 100% từ lên ý tưởng, thiết kế UI/DB, viết Code Frontend/Backend, Testing và Deployment.<br>- Quản lý tiến độ dự án cá nhân theo các mốc thời gian (Milestones). |
-| **Nhà tuyển dụng (Recruiter / Tech Lead)** | Các công ty/doanh nghiệp ứng tuyển Intern | - Đánh giá chất lượng Source Code trên GitHub, kiến trúc hệ thống và tư duy thiết kế phần mềm.<br>- Đặt câu hỏi phỏng vấn dựa trên dự án này để kiểm tra năng lực thực tế. |
-| **Người dùng trải nghiệm (Beta Testers)** | Bạn bè sinh viên / Đồng học | - Dùng thử ứng dụng, feedback về trải nghiệm người dùng (UX) và tìm lỗi (Bugs) giúp bạn hoàn thiện sản phẩm trước khi đi phỏng vấn. |
+| Bên liên quan (Stakeholder) | Phân loại | Vai trò & Trách nhiệm trong hệ thống | Kỳ vọng & Mục tiêu chính |
+| :--- | :--- | :--- | :--- |
+| **Product Owner / Project Lead** | Internal (Nội bộ) | - Quản lý định hướng sản phẩm, lập kế hoạch phát triển (Roadmap).<br>- Ưu tiên danh sách tính năng (Backlog) và phê duyệt các yêu cầu nghiệp vụ. | Sản phẩm hoàn thành đúng tiến độ, đảm bảo chất lượng kỹ thuật, tính năng hoạt động ổn định. |
+| **Development Team (Fullstack Developer)** | Internal (Nội bộ) | - Thiết kế kiến trúc hệ thống, Cơ sở dữ liệu và API.<br>- Lập trình các chức năng Frontend/Backend, thực hiện kiểm thử (Testing) và triển khai (Deployment). | Yêu cầu nghiệp vụ rõ ràng, hệ thống dễ mở rộng, tối ưu hiệu năng và ít phát sinh lỗi (Bugs). |
+| **Người dùng cá nhân (Individual End-Users)** | External (Bên ngoài) | - Sử dụng ứng dụng để quản lý công việc, lịch học, checklist và deadline cá nhân hàng ngày. | Giao diện đơn giản, dễ thao tác, tốc độ phản hồi nhanh, hệ thống nhắc nhở deadline chính xác. |
+| **Nhóm làm việc / Đội ngũ dự án (Team Members & Leaders)** | External (Bên ngoài) | - Tạo dự án nhóm, phân công nhiệm vụ (Task Allocation), theo dõi tiến độ công việc chung và trao đổi thông tin. | Trực quan hóa tiến độ (Kanban board), minh bạch trong phân công việc, không bị bỏ sót thông tin. |
+| **Quản trị viên hệ thống (System Administrator)** | Internal (Nội bộ) | - Quản lý tài khoản người dùng, phân quyền truy cập, giám sát trạng thái máy chủ và bảo mật dữ liệu. | Hệ thống hoạt động liên tục (High Availability), bảo mật thông tin người dùng và dễ dàng bảo trì. |
